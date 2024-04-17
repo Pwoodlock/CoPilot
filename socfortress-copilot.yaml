@@ -1,0 +1,208 @@
+---
+# Using ConfigMap for simplicity at the moment, will migrate on to Secrets.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: copilot-env
+  namespace: copilot
+data:
+  SERVER_IP: "0.0.0.0"
+  SERVER_HOST: "copilot-backend-service" # Depending on what method you setup cluster DNS you can change this to the internal k8s dns service name.
+  ALERT_FORWARDING_IP: "0.0.0.0"
+  WAZUH_INDEXER_URL: "https://1.1.1.1:9200"
+  WAZUH_INDEXER_USERNAME: "admin"
+  WAZUH_INDEXER_PASSWORD: "admin"
+  WAZUH_MANAGER_URL: "https://1.1.1.1"
+  WAZUH_MANAGER_USERNAME: "dummy"
+  WAZUH_MANAGER_PASSWORD: "dummy"
+  GRAYLOG_URL: "http://1.1.1.1"
+  GRAYLOG_USERNAME: "dummy"
+  GRAYLOG_PASSWORD: "dummy"
+  SHUFFLE_URL: "https://1.1.1.1"
+  SHUFFLER_API_KEY: "dummy"
+  DFIR_IRIS_URL: "https://1.1.1.1"
+  DFIR_IRIS_API_KEY: "dummy"
+  VELOCIRAPTOR_URL: "https://1.1.1.1"
+  VELOCIRAPTOR_API_KEY_PATH: "dummy"
+  SUBLIME_URL: "http://1.1.1.1"
+  SUBLIME_API_KEY: "dummy"
+  INFLUXDB_URL: "http://1.1.1.1"
+  INFLUXDB_API_KEY: "dummy"
+  INFLUXDB_ORG_AND_BUCKET: "dummy,dummy"
+  ASKSOCFORTRESS_URL: "https://knowledge.socfortress.co"
+  ASKSOCFORTRESS_API_KEY: "dummy"
+  SOCFORTRESSTHREATINTEL_URL: "https://intel.socfortress.co/search"
+  SOCFORTRESSTHREATINTEL_API_KEY: "dummy"
+  CORTEX_URL: "http://1.1.1.1"
+  CORTEX_API_KEY: "dummy"
+  GRAFANA_URL: "http://1.1.1.1"
+  GRAFANA_USERNAME: "dummy"
+  GRAFANA_PASSWORD: "dummy"
+  WAZUH_WORKER_PROVISIONING_URL: "http://1.1.1.1"
+  EVENT_SHIPPER_URL: "graylog_host"
+  GELF_INPUT_PORT: "gelf_port"
+  ALERT_CREATION_PROVISIONING_URL: "http://1.1.1.1"
+  HAPROXY_PROVISIONING_URL: "http://1.1.1.1"
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: copilot-backend
+  namespace: copilot
+spec:
+  serviceName: "copilot-backend"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: copilot-backend
+  template:
+    metadata:
+      labels:
+        app: copilot-backend
+    spec:
+      containers:
+      - name: copilot-backend
+       #image: For security it a proper sha hash based image is better suited.
+        image: ghcr.io/socfortress/copilot-backend:latest # Change to versioning after first install and :v0.7.0 etc or use the image: function, but you can only call 1 image:
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:  # Resource requests added for better scheduling
+            cpu: "100m" # 0.1 of 1.0 CPU Core
+            memory: "256Mi" # 256 mb of memory
+          limits:
+            cpu: "200m" # Max CPU cycles it can use on your cluster.  1 = one full CPU core. 200m = .2 of 1
+        envFrom:
+        - configMapRef:
+            name: copilot-env
+        volumeMounts:
+        - name: backend-storage # You can name this to any name (I am calling this backend-storage in this namespace for longhorn)
+          mountPath: /opt/logs
+          subPath: logs
+        - name: backend-storage
+          mountPath: /opt/copilot/backend/data
+          subPath: data
+        livenessProbe:  # Liveness probe added to check health
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 120
+          periodSeconds: 20
+        readinessProbe:  # Readiness probe added to check readiness
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 20
+  volumeClaimTemplates:
+  - metadata:
+      name: backend-storage
+    spec:
+      accessModes: ["ReadWriteOnce"] # RWO
+      storageClassName: "longhorn" # I am using Longhorn with the standard node storage being used with Longhorn to 3 replicas for HA (I have only three worker nodes atm)
+      resources:
+        requests:
+          storage: 1Gi # Set this to whatever you think you need.  I run prometheus to monitor this and fromo that I then know what to set
+
+
+---
+# This is a service created for copilot-backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: copilot-backend
+  namespace: copilot
+spec:
+  type: ClusterIP # Cluster IP can be Loadbalancer etc. Just make the proper adjustments depending on what you wish to do.
+  selector:
+    app: copilot-backend
+  ports:
+  - name: api
+    port: 5000
+    targetPort: 5000
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: copilot-frontend
+  namespace: copilot
+spec:
+  replicas: 1  # Only one instance necessary, can scale if needed (Needs work, as it's not in proper HA mode)
+  selector:
+    matchLabels:
+      app: copilot-frontend
+  serviceName: "copilot-frontend-service"
+  template:
+    metadata:
+      labels:
+        app: copilot-frontend
+    spec:
+      containers:
+      - name: copilot-frontend
+        #image: For security it a proper sha hash based image is better suited.
+        image: ghcr.io/socfortress/copilot-frontend:latest
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        resources:
+          requests:  # Resource requests added for better scheduling
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+        envFrom:
+        - configMapRef:
+            name: copilot-env
+        env:
+          - name: SERVER_HOST # This is the name of the backend.  See value below.
+            value: "copilot-backend-service"
+        volumeMounts:
+        - name: frontend-storage
+          mountPath: /opt/logs
+          subPath: logs
+        - name: frontend-storage
+          mountPath: /opt/copilot/backend/data
+          subPath: data
+        livenessProbe:  # Liveness probe added to check health
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 230
+          periodSeconds: 30
+        readinessProbe:  # Readiness probe added to check readiness
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 230
+          periodSeconds: 30
+  volumeClaimTemplates:
+  - metadata:
+      name: frontend-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "longhorn"
+      resources:
+        requests:
+          storage: 1Gi
+
+
+---
+apiVersion: v1
+kind: Service # copilot-frontend service
+metadata:
+  name: copilot-frontend
+  namespace: copilot
+spec:
+  type: ClusterIP
+  selector:
+    app: copilot-frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  - name: https
+    port: 443
+    targetPort: 443
