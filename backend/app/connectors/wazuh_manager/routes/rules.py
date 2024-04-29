@@ -9,11 +9,14 @@ from sqlalchemy.future import select
 
 from app.auth.routes.auth import AuthHandler
 from app.connectors.wazuh_manager.models.rules import DisabledRule
+
+# from app.connectors.wazuh_manager.schema.rules import RuleExclude
 from app.connectors.wazuh_manager.schema.rules import AllDisabledRuleResponse
 from app.connectors.wazuh_manager.schema.rules import RuleDisable
 from app.connectors.wazuh_manager.schema.rules import RuleDisableResponse
 from app.connectors.wazuh_manager.schema.rules import RuleEnable
 from app.connectors.wazuh_manager.schema.rules import RuleEnableResponse
+from app.connectors.wazuh_manager.schema.rules import RuleExcludeResponse
 
 # from app.connectors.wazuh_manager.schema.rules import RuleExclude
 # from app.connectors.wazuh_manager.schema.rules import RuleExcludeResponse
@@ -22,9 +25,6 @@ from app.connectors.wazuh_manager.services.rules import enable_rule
 
 # from app.connectors.wazuh_manager.services.rules import exclude_rule
 from app.db.db_session import get_db
-
-# from app.connectors.wazuh_manager.schema.rules import RuleExclude
-# from app.connectors.wazuh_manager.schema.rules import RuleExcludeResponse
 
 # from app.connectors.wazuh_manager.services.rules import exclude_rule
 
@@ -156,15 +156,11 @@ async def enable_wazuh_rule(
 
 
 # ! TODO: Implement this endpoint - Maybe use OpenAI?
-# @wazuh_manager_rules_router.post(
-#     "/rule/exclude",
-#     response_model=RuleExcludeResponse,
-#     description="Retrieve recommended exclusion for a Wazuh Rule",
-# )
-# async def exclude_wazuh_rule(rule: RuleExclude) -> RuleExcludeResponse:
-#     logger.info(f"rule: {rule}")
-#     recommended_exclusion = await exclude_rule(rule)
-#     if recommended_exclusion:
-#         return recommended_exclusion
-#     else:
-#         raise HTTPException(status_code=404, detail="Was not able to exclude rule")
+@wazuh_manager_rules_router.post(
+    "/rule/exclude",
+    response_model=RuleExcludeResponse,
+    description="Retrieve recommended exclusion for a Wazuh Rule",
+)
+async def exclude_wazuh_rule() -> RuleExcludeResponse:
+    raise HTTPException(status_code=501, detail="Feature not yet ready")
+    return RuleExcludeResponse(success=False, message="Feature not yet ready")

@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router"
 import Overview from "@/views/Overview.vue"
-import Login from "@/views/Auth/Login.vue"
+import Login from "@/views/auth/Login.vue"
 import { UserRole } from "@/types/auth.d"
 import { Layout } from "@/types/theme.d"
 import { authCheck } from "@/utils/auth"
-import type { FormType } from "@/components/AuthForm/types.d"
+import type { FormType } from "@/components/auth/types.d"
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -48,7 +48,7 @@ const router = createRouter({
 					path: ":id",
 					name: "Agent",
 					component: () => import("@/views/agents/Overview.vue"),
-					meta: { title: "Agent" }
+					meta: { title: "Agent", skipPin: true }
 				}
 			]
 		},
@@ -117,6 +117,12 @@ const router = createRouter({
 					name: "Soc-Users",
 					component: () => import("@/views/soc/Users.vue"),
 					meta: { title: "SOC Users" }
+				},
+				{
+					path: "pending-alerts",
+					name: "Soc-PendingAlerts",
+					component: () => import("@/views/soc/PendingAlerts.vue"),
+					meta: { title: "SOC Pending Alerts" }
 				}
 			]
 		},
@@ -155,6 +161,12 @@ const router = createRouter({
 			name: "ReportCreation",
 			component: () => import("@/views/ReportCreation.vue"),
 			meta: { title: "Report Creation", auth: true, roles: UserRole.All }
+		},
+		{
+			path: "/scheduler",
+			name: "Scheduler",
+			component: () => import("@/views/Scheduler.vue"),
+			meta: { title: "Scheduler", auth: true, roles: UserRole.All }
 		},
 		{
 			path: "/license",
@@ -199,7 +211,7 @@ const router = createRouter({
 		{
 			path: "/register",
 			name: "Register",
-			component: () => import("@/views/Auth/Login.vue"),
+			component: () => import("@/views/auth/Login.vue"),
 			props: { formType: "signup" as FormType },
 			meta: { title: "Register", forceLayout: Layout.Blank, checkAuth: true, skipPin: true }
 		},

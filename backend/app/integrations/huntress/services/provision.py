@@ -12,6 +12,9 @@ from app.connectors.grafana.services.dashboards import provision_dashboards
 from app.connectors.grafana.utils.universal import create_grafana_client
 from app.connectors.graylog.services.management import start_stream
 from app.connectors.graylog.utils.universal import send_post_request
+from app.connectors.wazuh_indexer.services.monitoring import (
+    output_shard_number_to_be_set_based_on_nodes,
+)
 from app.customer_provisioning.schema.grafana import GrafanaDatasource
 from app.customer_provisioning.schema.grafana import GrafanaDataSourceCreationResponse
 from app.customer_provisioning.schema.graylog import GraylogIndexSetCreationResponse
@@ -62,7 +65,7 @@ async def build_index_set_config(
         },
         creation_date=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         index_analyzer="standard",
-        shards=1,
+        shards=await output_shard_number_to_be_set_based_on_nodes(),
         replicas=0,
         index_optimization_max_num_segments=1,
         index_optimization_disabled=False,
