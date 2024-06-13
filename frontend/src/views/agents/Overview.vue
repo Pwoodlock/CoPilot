@@ -9,52 +9,65 @@
 		</div>
 		<n-spin
 			class="agent-header py-5 px-7 my-4"
+			content-class="flex justify-between gap-y-1 gap-x-6 flex-wrap items-start"
 			:class="{ critical: agent?.critical_asset, online: isOnline }"
 			:show="loadingAgent"
 		>
-			<div class="title">
-				<div class="critical" :class="{ active: agent?.critical_asset }" v-if="agent">
-					<n-tooltip>
-						Toggle Critical Assets
-						<template #trigger>
-							<n-button
-								text
-								:type="agent?.critical_asset ? 'warning' : 'default'"
-								circle
-								@click.stop="toggleCritical(agent.agent_id, agent.critical_asset)"
-							>
-								<template #icon>
-									<Icon :name="StarIcon"></Icon>
-								</template>
-							</n-button>
-						</template>
-					</n-tooltip>
+			<div class="info grow">
+				<div class="title">
+					<div class="critical" :class="{ active: agent?.critical_asset }" v-if="agent">
+						<n-tooltip>
+							Toggle Critical Assets
+							<template #trigger>
+								<n-button
+									text
+									:type="agent?.critical_asset ? 'warning' : 'default'"
+									circle
+									@click.stop="toggleCritical(agent.agent_id, agent.critical_asset)"
+								>
+									<template #icon>
+										<Icon :name="StarIcon"></Icon>
+									</template>
+								</n-button>
+							</template>
+						</n-tooltip>
+					</div>
+
+					<h1 v-if="agent?.hostname">
+						{{ agent?.hostname }}
+					</h1>
+
+					<span class="online-badge" v-if="isOnline">ONLINE</span>
+
+					<span class="quarantined-badge flex items-center gap-1" v-if="isQuarantined">
+						<Icon :name="QuarantinedIcon" :size="15"></Icon>
+						<span>QUARANTINED</span>
+					</span>
 				</div>
-
-				<h1 v-if="agent?.hostname">
-					{{ agent?.hostname }}
-				</h1>
-
-				<span class="online-badge" v-if="isOnline">ONLINE</span>
-
-				<span class="quarantined-badge flex items-center gap-1" v-if="isQuarantined">
-					<Icon :name="QuarantinedIcon" :size="15"></Icon>
-					<span>QUARANTINED</span>
-				</span>
+				<div class="label text-secondary-color mt-2">Agent #{{ agent?.agent_id }}</div>
 			</div>
-			<div class="label text-secondary-color mt-2">Agent #{{ agent?.agent_id }}</div>
+			<div class="actions flex items-center justify-end grow">
+				<n-button size="small" ghost type="primary" :loading="upgradingAgent" @click="upgradeWazuhAgent()">
+					Upgrade Wazuh Agent
+				</n-button>
+			</div>
 		</n-spin>
 		<n-card class="py-1 px-4 pb-4" content-style="padding:0">
 			<n-spin :show="loadingAgent">
 				<n-tabs type="line" animated default-value="Overview">
 					<n-tab-pane name="Overview" tab="Overview" display-directive="show">
 						<div class="section">
-							<OverviewSection v-if="agent" :agent="agent" />
+							<OverviewSection v-if="agent" :agent="agent" @updated="getAgent()" />
 						</div>
 					</n-tab-pane>
 					<n-tab-pane name="Vulnerabilities" tab="Vulnerabilities" display-directive="show:lazy">
 						<div class="section">
-							<VulnerabilitiesSection v-if="agent" :agent="agent" />
+							<VulnerabilitiesGrid v-if="agent" :agent="agent" />
+						</div>
+					</n-tab-pane>
+					<n-tab-pane name="SCA" tab="SCA" display-directive="show:lazy">
+						<div class="section">
+							<ScaTable v-if="agent" :agent="agent" />
 						</div>
 					</n-tab-pane>
 					<n-tab-pane name="Cases" tab="Cases" display-directive="show:lazy">
@@ -76,16 +89,18 @@
 						<ArtifactsCollect
 							v-if="agent"
 							@loaded-artifacts="artifacts = $event"
-							:agent-hostname="agent.hostname"
-							:artifacts="artifacts"
+							:hostname="agent.hostname"
+							:artifacts
+							hide-hostname-field
 						/>
 					</n-tab-pane>
 					<n-tab-pane name="command" tab="Command" display-directive="show:lazy">
 						<ArtifactsCommand
 							v-if="agent"
 							@loaded-artifacts="artifacts = $event"
-							:agent-hostname="agent.hostname"
-							:artifacts="artifacts"
+							:hostname="agent.hostname"
+							:artifacts
+							hide-hostname-field
 						/>
 					</n-tab-pane>
 					<n-tab-pane name="quarantine" tab="Quarantine" display-directive="show:lazy">
@@ -93,8 +108,9 @@
 							v-if="agent"
 							@action-performed="getAgent()"
 							@loaded-artifacts="artifacts = $event"
-							:agent-hostname="agent.hostname"
-							:artifacts="artifacts"
+							:hostname="agent.hostname"
+							:artifacts
+							hide-hostname-field
 						/>
 					</n-tab-pane>
 					<n-tab-pane name="active-response" tab="Active Response" display-directive="show:lazy">
@@ -108,17 +124,17 @@
 
 <script setup lang="ts">
 import { ref, onBeforeMount, computed, nextTick } from "vue"
-import { useRoute } from "vue-router"
+import { useMessage, NSpin, NTooltip, NButton, NTabs, NTabPane, NCard, useDialog } from "naive-ui"
+import { useRoute, useRouter } from "vue-router"
 import Api from "@/api"
 import { AgentStatus, type Agent } from "@/types/agents.d"
 import { handleDeleteAgent, toggleAgentCritical } from "@/components/agents/utils"
-import { useRouter } from "vue-router"
-import VulnerabilitiesSection from "@/components/agents/VulnerabilitiesSection.vue"
+import VulnerabilitiesGrid from "@/components/agents/vulnerabilities/VulnerabilitiesGrid.vue"
+import ScaTable from "@/components/agents/sca/ScaTable.vue"
 import AlertsList from "@/components/alerts/AlertsList.vue"
 import OverviewSection from "@/components/agents/OverviewSection.vue"
 import AgentCases from "@/components/agents/AgentCases.vue"
 import AgentFlowList from "@/components/agents/agentFlow/AgentFlowList.vue"
-import { useMessage, NSpin, NTooltip, NButton, NTabs, NTabPane, NCard, useDialog } from "naive-ui"
 import Icon from "@/components/common/Icon.vue"
 import type { Artifact } from "@/types/artifacts.d"
 import ArtifactsCollect from "@/components/artifacts/ArtifactsCollect.vue"
@@ -137,6 +153,7 @@ const router = useRouter()
 const dialog = useDialog()
 const route = useRoute()
 const loadingAgent = ref(false)
+const upgradingAgent = ref(false)
 const agent = ref<Agent | null>(null)
 const agentId = ref<string | null>(null)
 
@@ -170,6 +187,28 @@ function getAgent() {
 			})
 			.finally(() => {
 				loadingAgent.value = false
+			})
+	}
+}
+
+function upgradeWazuhAgent() {
+	if (agentId.value) {
+		upgradingAgent.value = true
+
+		Api.agents
+			.upgradeWazuhAgent(agentId.value)
+			.then(res => {
+				if (res.data.success) {
+					message.success(res.data?.message || "Agent upgraded successfully")
+				} else {
+					message.error(res.data?.message || "An error occurred. Please try again later.")
+				}
+			})
+			.catch(err => {
+				message.error(err.response?.data?.message || "An error occurred. Please try again later.")
+			})
+			.finally(() => {
+				upgradingAgent.value = false
 			})
 	}
 }

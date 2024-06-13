@@ -110,7 +110,7 @@
 			<n-modal
 				v-model:show="showSocAlertDetails"
 				preset="card"
-				content-style="padding:0px"
+				content-class="!p-0"
 				:style="{ maxWidth: 'min(800px, 90vw)', minHeight: 'min(250px, 90vh)', overflow: 'hidden' }"
 				:title="`SOC Alert: #${baseInfo?.case_soc_id}`"
 				:bordered="false"
@@ -131,7 +131,7 @@
 			<n-modal
 				v-model:show="showDetails"
 				preset="card"
-				content-style="padding:0px"
+				content-class="!p-0"
 				:style="{ maxWidth: 'min(800px, 90vw)', minHeight: 'min(550px, 90vh)', overflow: 'hidden' }"
 				:title="'SOC Case: ' + baseInfo?.case_uuid"
 				:bordered="false"
@@ -254,7 +254,7 @@ import SocCaseAssetsList from "./SocCaseAssetsList.vue"
 import SocCaseNoteForm from "./SocCaseNoteForm.vue"
 import SocCaseNotesList from "./SocCaseNotesList.vue"
 import SocCaseItemActions from "./SocCaseItemActions.vue"
-import SocAlertItem from "../SocAlerts/SocAlertItem.vue"
+import SocAlertItem from "../SocAlerts/SocAlertItem/SocAlertItem.vue"
 import Api from "@/api"
 import {
 	useMessage,

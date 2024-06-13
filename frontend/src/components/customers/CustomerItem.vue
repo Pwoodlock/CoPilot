@@ -97,7 +97,7 @@
 		<n-modal
 			v-model:show="showDetails"
 			preset="card"
-			content-style="padding:0px"
+			content-class="!p-0"
 			:style="{ maxWidth: 'min(900px, 90vw)', minHeight: 'min(600px, 90vh)', overflow: 'hidden' }"
 			:title="customerInfo?.customer_name"
 			:bordered="false"
@@ -123,8 +123,18 @@
 							@submitted="customerMeta = $event"
 						/>
 					</n-tab-pane>
-					<n-tab-pane name="Integrations" tab="Integrations" display-directive="show:lazy">
+					<n-tab-pane
+						name="3rd Party Integrations"
+						tab="3rd Party Integrations"
+						display-directive="show:lazy"
+					>
 						<CustomerIntegrations
+							:customerCode="customer.customer_code"
+							:customerName="customer.customer_name"
+						/>
+					</n-tab-pane>
+					<n-tab-pane name="Network Connectors" tab="Network Connectors" display-directive="show:lazy">
+						<CustomerNetworkConnectors
 							:customerCode="customer.customer_code"
 							:customerName="customer.customer_name"
 						/>
@@ -184,6 +194,7 @@ import CustomerAgents from "./CustomerAgents.vue"
 import CustomerProvision from "./provision/CustomerProvision.vue"
 import CustomerHealthcheckList from "./healthcheck/CustomerHealthcheckList.vue"
 import CustomerIntegrations from "./integrations/CustomerIntegrations.vue"
+import CustomerNetworkConnectors from "./networkConnectors/CustomerNetworkConnectors.vue"
 import Api from "@/api"
 import { NAvatar, useMessage, NPopover, NModal, NTabs, NTabPane, NSpin, NScrollbar, NButton } from "naive-ui"
 import type { Customer, CustomerMeta } from "@/types/customers.d"

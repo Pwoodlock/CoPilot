@@ -18,7 +18,7 @@
 	<n-modal
 		v-model:show="showSocAlertDetails"
 		preset="card"
-		content-style="padding:0px"
+		content-class="!p-0"
 		:style="{ maxWidth: 'min(800px, 90vw)', minHeight: 'min(250px, 90vh)', overflow: 'hidden' }"
 		:title="`SOC Alert: #${selectedAlertId}`"
 		:bordered="false"
@@ -42,7 +42,7 @@ import type { SocAlert } from "@/types/soc/alert.d"
 import { onBeforeMount, onBeforeUnmount, ref } from "vue"
 import Api from "@/api"
 import { useMessage, NTooltip, NSpin, NModal } from "naive-ui"
-import SocAlertItem from "../SocAlerts/SocAlertItem.vue"
+import SocAlertItem from "../SocAlerts/SocAlertItem/SocAlertItem.vue"
 import axios from "axios"
 
 const { userId } = defineProps<{

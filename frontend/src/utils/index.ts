@@ -3,8 +3,8 @@ import { type Component, h } from "vue"
 import { isMobile as detectMobile } from "detect-touch-device"
 import { md5 } from "js-md5"
 import dayjs from "@/utils/dayjs"
-
-export type OS = "Unknown" | "Windows" | "MacOS" | "UNIX" | "Linux"
+import type { OsTypesFull } from "@/types/common"
+import _trim from "lodash/trim"
 
 // Transform File Instance in base64 string
 export function file2Base64(blob: Blob): Promise<string> {
@@ -63,8 +63,8 @@ export function iconFromOs(os: string): string {
 	return "mdi:help-box"
 }
 
-export function getOS(): OS {
-	let os: OS = "Unknown"
+export function getOS(): OsTypesFull {
+	let os: OsTypesFull = "Unknown"
 	if (navigator.userAgent.indexOf("Win") != -1) os = "Windows"
 	if (navigator.userAgent.indexOf("Mac") != -1) os = "MacOS"
 	if (navigator.userAgent.indexOf("X11") != -1) os = "UNIX"
@@ -109,4 +109,8 @@ export function price(
 	const price = options.splitDecimal ? (amount / 100).toFixed(2) : amount
 
 	return `${symbol}${price}`
+}
+
+export function getBaseUrl() {
+	return _trim(import.meta.env.VITE_API_URL, "/")
 }

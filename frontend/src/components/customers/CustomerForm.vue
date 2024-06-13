@@ -3,7 +3,7 @@
 		<n-form :label-width="80" :model="form" :rules="rules" ref="formRef">
 			<div class="flex flex-col gap-4">
 				<div class="flex flex-wrap gap-4">
-					<div v-for="(val, key) of form" :key="key" class="grow">
+					<div v-for="(_, key) of form" :key="key" class="grow">
 						<n-form-item :label="fieldsMeta[key].label" :path="key" class="grow">
 							<n-input
 								v-model:value.trim="form[key]"
@@ -76,8 +76,17 @@ const formRef = ref<FormInst | null>(null)
 const rules: FormRules = {
 	customer_code: {
 		required: true,
-		message: "Please input code",
-		trigger: ["input", "blur"]
+		message: "Please input code. Code must be all lowercase and contain no spaces or special characters.",
+		trigger: ["input", "blur"],
+		validator: (rule, value) => {
+			if (value !== value.toLowerCase()) {
+				return Promise.reject("Code must be all lowercase")
+			} else if (!/^[a-z]+$/.test(value)) {
+				return Promise.reject("Code must not contain spaces or special characters")
+			} else {
+				return Promise.resolve()
+			}
+		}
 	},
 	customer_name: {
 		required: true,

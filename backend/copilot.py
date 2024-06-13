@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from app.auth.utils import AuthHandler
@@ -35,6 +36,7 @@ from app.routers import auth
 from app.routers import carbonblack
 from app.routers import connectors
 from app.routers import cortex
+from app.routers import crowdstrike
 from app.routers import customer_provisioning
 from app.routers import customers
 from app.routers import dfir_iris
@@ -54,6 +56,7 @@ from app.routers import network_connectors
 from app.routers import office365
 from app.routers import sap_siem
 from app.routers import scheduler
+from app.routers import scoutsuite
 from app.routers import shuffle
 from app.routers import smtp
 from app.routers import stack_provisioning
@@ -139,6 +142,8 @@ api_router.include_router(license.router)
 api_router.include_router(modules.router)
 api_router.include_router(carbonblack.router)
 api_router.include_router(network_connectors.router)
+api_router.include_router(crowdstrike.router)
+api_router.include_router(scoutsuite.router)
 
 # Include the APIRouter in the FastAPI app
 app.include_router(api_router)
@@ -164,6 +169,13 @@ async def init_db():
     if not scheduler.running:
         logger.info("Scheduler is not running, starting now...")
         scheduler.start()
+
+
+# Create `scoutsuite-report` directory if it doesnt exist
+if not os.path.exists("scoutsuite-report"):
+    os.makedirs("scoutsuite-report")
+
+app.mount("/scoutsuite-report", StaticFiles(directory="scoutsuite-report"), name="scoutsuite-report")
 
 
 @app.get("/")

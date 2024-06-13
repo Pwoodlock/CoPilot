@@ -18,6 +18,10 @@ class SyncedAgent(WazuhAgent, VelociraptorAgent):
     pass
 
 
+class SyncedWazuhAgent(WazuhAgent):
+    pass
+
+
 class SyncedAgentsResponse(BaseModel):
     # agents_added: List[SyncedAgent]
     success: bool
@@ -46,5 +50,10 @@ class AgentUpdateCustomerCodeBody(BaseModel):
 
 
 class AgentUpdateCustomerCodeResponse(BaseModel):
+    success: bool
+    message: str
+
+
+class AgentWazuhUpgradeResponse(BaseModel):
     success: bool
     message: str

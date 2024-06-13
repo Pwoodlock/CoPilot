@@ -151,10 +151,26 @@ const router = createRouter({
 			meta: { title: "Users", auth: true, roles: UserRole.All }
 		},
 		{
-			path: "/integrations",
-			name: "Integrations",
-			component: () => import("@/views/Integrations.vue"),
-			meta: { title: "Integrations", auth: true, roles: UserRole.All }
+			path: "/external-services",
+			redirect: "/external-services/third-party-integrations",
+			meta: {
+				auth: true,
+				roles: UserRole.All
+			},
+			children: [
+				{
+					path: "third-party-integrations",
+					name: "ExternalServices-ThirdPartyIntegrations",
+					component: () => import("@/views/externalServices/ThirdPartyIntegrations.vue"),
+					meta: { title: "Third Party Integrations" }
+				},
+				{
+					path: "network-connectors",
+					name: "ExternalServices-NetworkConnectors",
+					component: () => import("@/views/externalServices/NetworkConnectors.vue"),
+					meta: { title: "Network Connectors" }
+				}
+			]
 		},
 		{
 			path: "/report-creation",
@@ -167,6 +183,12 @@ const router = createRouter({
 			name: "Scheduler",
 			component: () => import("@/views/Scheduler.vue"),
 			meta: { title: "Scheduler", auth: true, roles: UserRole.All }
+		},
+		{
+			path: "/cloud-security-assessment",
+			name: "CloudSecurityAssessment",
+			component: () => import("@/views/CloudSecurityAssessment.vue"),
+			meta: { title: "Cloud Security Assessment", auth: true, roles: UserRole.All }
 		},
 		{
 			path: "/license",
@@ -211,7 +233,7 @@ const router = createRouter({
 		{
 			path: "/register",
 			name: "Register",
-			component: () => import("@/views/auth/Login.vue"),
+			component: Login,
 			props: { formType: "signup" as FormType },
 			meta: { title: "Register", forceLayout: Layout.Blank, checkAuth: true, skipPin: true }
 		},

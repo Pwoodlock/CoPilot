@@ -173,6 +173,7 @@ async def provision_content_pack(content_pack_request: ProvisionContentPackReque
     )
 
 
+# ! NETWORK CONNECTOR CONTENT PACKS PROVISIONING ! #
 async def filter_content_packs(content_packs, protocol_type):
     if protocol_type == "TCP":
         return [pack for pack in content_packs if "UDP" not in pack]
@@ -182,8 +183,8 @@ async def filter_content_packs(content_packs, protocol_type):
 
 
 async def process_content_pack(content_pack, content_pack_request):
-    if await does_content_pack_exist(content_pack):
-        logger.info(f"Content pack {content_pack} already exists")
+    content_pack_exists = await does_content_pack_exist(content_pack_request.keywords.customer_name)
+    if content_pack_exists is True:
         return
     content_pack = load_content_pack_json(f"{content_pack}.json")
     replace_content_pack_keywords = ReplaceContentPackKeywords(
@@ -201,10 +202,13 @@ async def process_content_pack(content_pack, content_pack_request):
 
 async def insert_and_install_content_pack(content_pack):
     logger.info(f"Inserting {content_pack} Content Pack...")
-    await insert_content_pack(content_pack)
+    content_pack_inserted = await insert_content_pack(content_pack)
     id, rev = await get_id_and_rev(content_pack)
     logger.info(f"Id: {id}, Rev: {rev}")
-    await install_content_pack(content_pack_id=id, revision=rev)
+    if content_pack_inserted is True:
+        await install_content_pack(content_pack_id=id, revision=rev)
+    else:
+        logger.info(f"Content pack {content_pack['name']} already inserted, skipping install...")
 
 
 async def provision_content_pack_network_connector(content_pack_request: ProvisionNetworkContentPackRequest) -> ProvisionGraylogResponse:

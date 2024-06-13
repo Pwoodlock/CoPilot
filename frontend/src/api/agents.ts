@@ -1,33 +1,70 @@
 import { type FlaskBaseResponse } from "@/types/flask.d"
 import { HttpClient } from "./httpClient"
-import type { Agent, AgentVulnerabilities, OutdatedWazuhAgents, OutdatedVelociraptorAgents } from "@/types/agents.d"
+import type {
+	Agent,
+	AgentVulnerabilities,
+	OutdatedWazuhAgents,
+	OutdatedVelociraptorAgents,
+	AgentSca,
+	ScaPolicyResult
+} from "@/types/agents.d"
+
+export interface AgentPayload {
+	velociraptor_id: string
+}
 
 export default {
-	getAgents(id?: string) {
-		return HttpClient.get<FlaskBaseResponse & { agents: Agent[] }>(`/agents${id ? "/" + id : ""}`)
+	getAgents(agentId?: string) {
+		return HttpClient.get<FlaskBaseResponse & { agents: Agent[] }>(`/agents${agentId ? "/" + agentId : ""}`)
 	},
-	markCritical(id: string) {
-		return HttpClient.post<FlaskBaseResponse>(`/agents/${id}/critical`)
+	markCritical(agentId: string) {
+		return HttpClient.post<FlaskBaseResponse>(`/agents/${agentId}/critical`)
 	},
-	markNonCritical(id: string) {
-		return HttpClient.post<FlaskBaseResponse>(`/agents/${id}/noncritical`)
+	markNonCritical(agentId: string) {
+		return HttpClient.post<FlaskBaseResponse>(`/agents/${agentId}/noncritical`)
 	},
-	deleteAgent(id: string) {
-		return HttpClient.delete<FlaskBaseResponse>(`/agents/${id}/delete`)
+	deleteAgent(agentId: string) {
+		return HttpClient.delete<FlaskBaseResponse>(`/agents/${agentId}/delete`)
 	},
 	syncAgents() {
 		return HttpClient.post<FlaskBaseResponse>(`/agents/sync`)
 	},
-	agentVulnerabilities(id: string) {
+	agentVulnerabilities(agentId: string) {
 		return HttpClient.get<FlaskBaseResponse & { vulnerabilities: AgentVulnerabilities[] }>(
-			`/agents/${id}/vulnerabilities`
+			`/agents/${agentId}/vulnerabilities`
 		)
 	},
-	getSocCases(id: string | number, signal?: AbortSignal) {
+	getSocCases(agentId: string | number, signal?: AbortSignal) {
 		return HttpClient.get<FlaskBaseResponse & { case_ids: number[] }>(
-			`/agents/${id}/soc_cases`,
+			`/agents/${agentId}/soc_cases`,
 			signal ? { signal } : {}
 		)
+	},
+	getSCA(agentId: string | number, signal?: AbortSignal) {
+		return HttpClient.get<FlaskBaseResponse & { sca: AgentSca[] }>(
+			`/agents/${agentId}/sca`,
+			signal ? { signal } : {}
+		)
+	},
+	getSCAResults(agentId: string | number, policyId: string, signal?: AbortSignal) {
+		return HttpClient.get<FlaskBaseResponse & { sca_policy_results: ScaPolicyResult[] }>(
+			`/agents/${agentId}/sca/${policyId}`,
+			signal ? { signal } : {}
+		)
+	},
+	updateAgent(agentId: string, payload: AgentPayload) {
+		return HttpClient.put<FlaskBaseResponse>(
+			`/agents/${agentId}/update`,
+			{},
+			{
+				params: {
+					velociraptor_id: payload.velociraptor_id
+				}
+			}
+		)
+	},
+	upgradeWazuhAgent(agentId: string) {
+		return HttpClient.post<FlaskBaseResponse>(`/agents/${agentId}/wazuh/upgrade`)
 	},
 
 	// IGNORE AT THE MOMENT !

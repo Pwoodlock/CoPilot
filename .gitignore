@@ -48,15 +48,18 @@ wheels/
 .env
 *.sqbpro
 site/
-backend/file-store/api.config.yaml
-unplugin.components.d.ts
-package-lock.json
 *.checkpoint
 firewall.spec
 
-frontend/cypress/screenshots/
-
+backend/data/api.config.yaml
+backend/file-store/api.config.yaml
 backend/report.pdf
-
 backend/report.html
+backend/scoutsuite-report
 backend/app/integrations/office365/services/wazuh_config.xml
+
+frontend/src/unplugin.components.d.ts
+frontend/cypress/screenshots/
+frontend/tsconfig.app.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
+frontend/tsconfig.vitest.tsbuildinfo
